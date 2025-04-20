@@ -2,7 +2,7 @@ package = "luachild"
 version = "scm-1"
 source = {
   url = "git://github.com/sewbacca/luachild",
-  branch = "fix-luajit-compilation",
+  branch = "testing",
 }
 description = {
   summary = "Spawn sub-processes and communicate with them through pipes.",
