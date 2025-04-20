@@ -113,7 +113,7 @@ int lc_pipe(lua_State *L)
 {
   if (!file_handler_creator(L, "/dev/null", 0)) return 0;
   int fd[2];
-  if (-1 == pipe(fd))
+  if (-1 == pipe2(fd, O_NONBLOCK))
     return push_error(L);
   closeonexec(fd[0]);
   closeonexec(fd[1]);
