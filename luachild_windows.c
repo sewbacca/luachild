@@ -131,9 +131,11 @@ int lc_pipe(lua_State *L)
     GetNamedPipeHandleStateW(ph[0], &mode, 0,0,0,0,0);
     mode |= PIPE_NOWAIT;
     SetNamedPipeHandleState(ph[0], &mode, 0,0);
+	/*
     GetNamedPipeHandleStateW(ph[1], &mode, 0,0,0,0,0);
     mode |= PIPE_NOWAIT;
     SetNamedPipeHandleState(ph[1], &mode, 0,0); 
+	*/
   }
   lua_pushcfile(L, _fdopen(_open_osfhandle((long long)ph[0], _O_RDONLY), "r"));
   lua_pushcfile(L, _fdopen(_open_osfhandle((long long)ph[1], _O_WRONLY), "w"));
