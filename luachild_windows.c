@@ -118,14 +118,25 @@ int lc_environ(lua_State *L)
 
 int lc_pipe(lua_State *L)
 {
+  int nonblock = lua_toboolean(L, 1);
   if (!file_handler_creator(L, "COMSPEC", 1)) return 0;
   HANDLE ph[2];
   if (!CreatePipe(ph + 0, ph + 1, 0, 0))
     return push_error(L);
   SetHandleInformation(ph[0], HANDLE_FLAG_INHERIT, 0);
   SetHandleInformation(ph[1], HANDLE_FLAG_INHERIT, 0);
-  lua_pushcfile(L, _fdopen(_open_osfhandle((long)ph[0], _O_RDONLY), "r"));
-  lua_pushcfile(L, _fdopen(_open_osfhandle((long)ph[1], _O_WRONLY), "w"));
+  if (nonblock)
+  {
+    DWORD mode;
+    GetNamedPipeHandleStateW(ph[0], &mode, 0,0,0,0,0);
+    mode |= PIPE_NOWAIT;
+    SetNamedPipeHandleState(ph[0], &mode, 0,0);
+    GetNamedPipeHandleStateW(ph[1], &mode, 0,0,0,0,0);
+    mode |= PIPE_NOWAIT;
+    SetNamedPipeHandleState(ph[1], &mode, 0,0); 
+  }
+  lua_pushcfile(L, _fdopen(_open_osfhandle((long long)ph[0], _O_RDONLY), "r"));
+  lua_pushcfile(L, _fdopen(_open_osfhandle((long long)ph[1], _O_WRONLY), "w"));
   return 2;
 }
 
@@ -136,6 +147,7 @@ struct spawn_params {
   lua_State *L;
   const char *cmdline;
   const char *environment;
+  int externalconsole;
   STARTUPINFO si;
 };
 
@@ -316,7 +328,7 @@ static int spawn_param_execute(struct spawn_params *p)
   c = strdup(p->cmdline);
   e = (char *)p->environment; /* strdup(p->environment); */
   /* XXX does CreateProcess modify its environment argument? */
-  ret = CreateProcess(0, c, 0, 0, TRUE, 0, e, 0, &p->si, &pi);
+  ret = CreateProcess(0, c, 0, 0, TRUE, p->externalconsole ? CREATE_NEW_CONSOLE : 0, e, 0, &p->si, &pi);
   /* if (e) free(e); */
   free(c);
   if (!ret)
@@ -338,6 +350,22 @@ int process_wait(lua_State *L)
     p->status = exitcode;
   }
   lua_pushnumber(L, p->status);
+  return 1;
+}
+
+int process_status(lua_State *L)
+{
+  struct process *p = luaL_checkudata(L, 1, PROCESS_HANDLE);
+  DWORD exitcode;
+  if(!GetExitCodeProcess(p->hProcess, &exitcode))
+    return push_error(L);
+  else {
+	if (exitcode == STILL_ACTIVE)
+	  lua_pushnil(L);
+	else
+	  lua_pushinteger(L, exitcode);
+	return 1;
+  }
   return 1;
 }
 
@@ -451,6 +479,9 @@ int lc_spawn(lua_State *L)
     get_redirect(L, 2, "stdin", params);    /* cmd opts ... */
     get_redirect(L, 2, "stdout", params);   /* cmd opts ... */
     get_redirect(L, 2, "stderr", params);   /* cmd opts ... */
+	lua_getfield(L, 2, "externalconsole");
+	params->externalconsole = lua_toboolean(L, -1);
+	lua_pop(L, 1);
   }
   return spawn_param_execute(params);   /* proc/nil error */
 }

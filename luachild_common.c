@@ -29,6 +29,9 @@ SHFUNC int luaopen_luachild(lua_State *L)
   lua_pushcfunction(L, process_wait);
   set_table_field(L, "wait");
 
+  lua_pushcfunction(L, process_status);
+  set_table_field(L, "status");
+
   lua_pushvalue(L, -1);
   lua_setfield(L, -2, "__index");
 
@@ -50,6 +53,9 @@ SHFUNC int luaopen_luachild(lua_State *L)
 
   lua_pushcfunction(L, process_wait);
   set_table_field(L, "wait");
+
+  lua_pushcfunction(L, process_status);
+  set_table_field(L, "status");
 
   return 1;
 }
