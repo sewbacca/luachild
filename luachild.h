@@ -5,6 +5,8 @@
 #include "lua.h"
 #include "lualib.h"
 
+#define USE_WINDOWS
+
 #ifdef LUA_JITLIBNAME // Match luajit
 #define USE_LUAJIT
 #else // fallback to PUC-Rio lua
@@ -28,6 +30,7 @@ int lc_setenv(lua_State *L);
 int lc_environ(lua_State *L);
 int lc_spawn(lua_State *L);
 int process_wait(lua_State *L);
+int process_status(lua_State *L);
 int diriter_close(lua_State *L);
 int process_tostring(lua_State *L);
 
