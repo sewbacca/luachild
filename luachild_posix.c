@@ -111,9 +111,11 @@ static int closeonexec(int d)
 /* -- in out/nil error */
 int lc_pipe(lua_State *L)
 {
+  int nonblock = lua_toboolean(L, 1);
+
   if (!file_handler_creator(L, "/dev/null", 0)) return 0;
   int fd[2];
-  if (-1 == pipe2(fd, O_NONBLOCK))
+  if (-1 == pipe2(fd, nonblock ? O_NONBLOCK : 0))
     return push_error(L);
   closeonexec(fd[0]);
   closeonexec(fd[1]);
@@ -201,7 +203,44 @@ static int posix_spawnp(
 struct process {
   int status;
   pid_t pid;
+  int reaped;
+  int reaped_status;
 };
+
+int process_status(lua_State *L)
+{
+  struct process *p = luaL_checkudata(L, 1, PROCESS_HANDLE);
+
+  int status;
+  int result = p->reaped ? p->reaped_status : waitpid(p->pid, &status, WNOHANG);
+
+  if (result == 0) {
+	lua_pushnil(L);
+	lua_pushnil(L);
+	return 2;
+  } else if (result == p->pid) {
+	p->reaped = 1;
+	p->reaped_status = status;
+
+	if (WIFEXITED(status))
+	{
+	  lua_pushstring(L, "exit");
+	  lua_pushinteger(L, WEXITSTATUS(status));
+	}
+	else if(WIFSIGNALED(status))
+	{
+	  lua_pushstring(L, "signal");
+	  lua_pushinteger(L, WTERMSIG(status));
+	}
+	else
+	{
+	  lua_pushstring(L, "abnormal");
+	  lua_pushinteger(L, -1);
+	}
+  } else
+	return push_error(L);
+  return 2;
+}
 
 /* proc -- exitcode/nil error */
 int process_wait(lua_State *L)
@@ -276,6 +315,7 @@ static int spawn_param_execute(struct spawn_params *p)
   luaL_getmetatable(L, PROCESS_HANDLE);
   lua_setmetatable(L, -2);
   proc->status = -1;
+  proc->reaped = 0;
   ret = posix_spawnp(&proc->pid, p->command, &p->redirect, 0,
                      (char *const *)p->argv, (char *const *)p->envp);
   posix_spawn_file_actions_destroy(&p->redirect);

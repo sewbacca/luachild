@@ -5,8 +5,6 @@
 #include "lua.h"
 #include "lualib.h"
 
-#define USE_WINDOWS
-
 #ifdef LUA_JITLIBNAME // Match luajit
 #define USE_LUAJIT
 #else // fallback to PUC-Rio lua
