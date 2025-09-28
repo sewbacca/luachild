@@ -1,4 +1,8 @@
 compile_flags.txt
-*{.o,.obj}
-*{.so,.dll,.dylib}
-*{.a,.lib}
+*.o
+*.obj
+*.so
+*.dll
+*.dylib
+*.a
+*.lib
