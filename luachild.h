@@ -28,7 +28,7 @@ int lc_setenv(lua_State *L);
 int lc_environ(lua_State *L);
 int lc_spawn(lua_State *L);
 int process_wait(lua_State *L);
-int process_status(lua_State *L);
+int process_exitcode(lua_State *L);
 int diriter_close(lua_State *L);
 int process_tostring(lua_State *L);
 

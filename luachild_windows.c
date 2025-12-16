@@ -355,7 +355,7 @@ int process_wait(lua_State *L)
   return 1;
 }
 
-int process_status(lua_State *L)
+int process_exitcode(lua_State *L)
 {
   struct process *p = luaL_checkudata(L, 1, PROCESS_HANDLE);
   DWORD exitcode;
