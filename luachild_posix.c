@@ -111,9 +111,10 @@ static int closeonexec(int d)
 /* -- in out/nil error */
 int lc_pipe(lua_State *L)
 {
+  int nonblock = lua_toboolean(L, 1);
   if (!file_handler_creator(L, "/dev/null", 0)) return 0;
   int fd[2];
-  if (-1 == pipe2(fd, O_NONBLOCK))
+  if (-1 == pipe2(fd, nonblock ? O_NONBLOCK : 0))
     return push_error(L);
   closeonexec(fd[0]);
   closeonexec(fd[1]);
