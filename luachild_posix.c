@@ -217,6 +217,24 @@ int process_wait(lua_State *L)
   return 1;
 }
 
+int process_status(lua_State *L)
+{
+  struct process *p = luaL_checkudata(L, 1, PROCESS_HANDLE);
+  if (p->status == -1) {
+    int status;
+	int waitstatus = waitpid(p->pid, &status, WNOHANG);
+    if (-1 == waitstatus)
+      return push_error(L);
+	else if(0 == waitstatus) {
+	  lua_pushnil(L);
+	  return 1;
+	}
+    p->status = WEXITSTATUS(status);
+  }
+  lua_pushnumber(L, p->status);
+  return 1;
+}
+
 /* proc -- string */
 int process_tostring(lua_State *L)
 {
